@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +10,13 @@
 static struct termios oldattr, newattr;
 static char target[4 * 12 + 1];
 
+static void sigint_handler(int dummy) {
+    puts("\n\nhave a good typing!\n");
+    exit(0);
+}
+
 __attribute__((constructor)) static void prologue(void) {
+    signal(SIGINT, sigint_handler);
     tcgetattr(STDIN_FILENO, &oldattr);
     newattr = oldattr;
     newattr.c_lflag &= ~ICANON;
@@ -101,7 +108,7 @@ int main(int argc, char **argv) {
                 putchar(c);
                 ++pos;
             } else if (c == 'q') {
-                goto finish;
+                sigint_handler(0);
             } else {
                 ++mistype;
             }
@@ -116,7 +123,5 @@ int main(int argc, char **argv) {
         printf("mistype: %d\n", mistype);
         printf("elapsed: %f\n", ((double)(end - start)) / CLOCKS_PER_SEC);
     }
-finish:
-    puts("have a good typing!\n");
     return 0;
 }
